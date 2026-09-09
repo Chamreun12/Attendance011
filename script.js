@@ -399,21 +399,25 @@
                             <span class="text-xs font-bold text-sky-600 bg-sky-50 px-2 py-0.5 rounded border border-sky-100">${item.id || 'N/A'}</span>
                             <h4 class="font-bold text-slate-800 text-base">${item.name || '-'}</h4>
                         </div>
-                        <div>${statusBadgeHtml}</div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-2 text-xs text-slate-600">
+                        </div>
+                        <div class="grid grid-cols-2 gap-3 text-xs text-slate-600">
                         <div>
-                            <span class="text-slate-400 block text-[11px]">កាលបរិច្ឆេទ</span>
-                            <span class="font-medium text-slate-700"><i class="fa-regular fa-calendar text-slate-400 mr-1"></i>${item.date || '-'}</span>
+                        <span class="text-slate-400 block text-[11px]">ចំនួនថ្ងៃ</span>
+                        <span class="font-medium text-slate-700"><i class="fa-regular fa-calendar text-slate-400 mr-1"></i>${item.date || '-'}</span>
                         </div>
                         <div>
-                            <span class="text-slate-400 block text-[11px]">ម៉ោង</span>
-                            <span class="font-medium text-slate-700"><i class="fa-regular fa-clock text-slate-400 mr-1"></i>${item.time || '-'}</span>
+                        <span class="text-slate-400 block text-[11px]">ចំនួនម៉៉ោង</span>
+                        <span class="font-medium text-slate-700"><i class="fa-regular fa-clock text-slate-400 mr-1"></i>${item.time || '-'}</span>
+                        </div>
+
+                        <div>
+                        <span class="text-slate-400 block text-[11px]">ប្រាក់ខ្ចី</span>
+                        ${statusBadgeHtml}
                         </div>
                     </div>
                     ${item.note && item.note !== '-' ? `
                     <div class="text-xs bg-slate-50 p-2 rounded-lg text-slate-600 border border-slate-100">
-                        <span class="text-slate-400 font-semibold">កំណត់សម្គាល់៖</span> ${item.note}
+                        <span class="text-slate-400 font-semibold">ប្រាក់ពលកម្ម</span> ${item.note}
                     </div>` : ''}
                 `;
                 cardsView.appendChild(card);
