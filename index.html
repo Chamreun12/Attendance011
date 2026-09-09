@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="km" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ប្រព័ន្ធស្វែងរកវត្តមាន - Attendance Search System</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for Khmer Language (Kantumruy Pro & Moul) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:ital,wght@0,300..700;1,300..700&family=Moul&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        khmer: ['"Kantumruy Pro"', 'sans-serif'],
+                        moul: ['"Moul"', 'serif']
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0284c7',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Kantumruy Pro', sans-serif;
+        }
+        .moul-text {
+            font-family: 'Moul', serif;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="h-full text-slate-800 flex flex-col min-h-screen bg-gradient-to-br from-slate-50 via-sky-50/30 to-slate-100">
+
+    <!-- Header Navigation -->
+    <header class="bg-white/80 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-30">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-600 to-blue-500 flex items-center justify-center text-white shadow-md shadow-sky-500/20">
+                    <i class="fa-solid fa-clipboard-user text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-slate-800 text-lg leading-tight">ប្រព័ន្ធស្វែងរកវត្តមាន</h1>
+                    <p class="text-xs text-slate-500 font-medium">Attendance Search System</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <button id="btnSettings" class="px-3.5 py-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold flex items-center gap-2 transition-all shadow-sm">
+                    <i class="fa-solid fa-file-excel text-emerald-600"></i>
+                    <span class="hidden sm:inline">ភ្ជាប់ Google Sheet</span>
+                </button>
+                <button id="btnHelp" class="p-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 transition-all text-xs" title="ការណែនាំ">
+                    <i class="fa-solid fa-circle-question text-base"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-6">
+        
+        <!-- Local File Protocol Warning (CORS Alert) -->
+        <div id="localFileWarning" class="hidden bg-amber-50 border border-amber-200 text-amber-900 px-4 py-3 rounded-xl text-xs sm:text-sm flex items-start gap-3 shadow-sm">
+            <i class="fa-solid fa-triangle-exclamation text-amber-600 text-lg shrink-0 mt-0.5"></i>
+            <div>
+                <p class="font-bold">អ្នកកំពុងបើក File នេះផ្ទាល់ចេញពី Computer (file://)</p>
+                <p class="text-xs text-amber-800 mt-0.5 leading-relaxed">
+                    Browser ខ្លះ (ដូចជា Chrome/Edge) អាចនឹងរារាំង (Block CORS) ការទាញយកទិន្នន័យពី Google Sheets ពេលបើក File ផ្ទាល់។ 
+                    ប្រសិនបើស្វែងរកមិនឃើញ សូមសាកល្បង Publish Google Sheet ទៅ Web ឬ Run តាមរយៈ Live Server / Web Hosting (GitHub Pages, Netlify)។
+                </p>
+            </div>
+        </div>
+
+        <!-- Connection Banner Status -->
+        <div id="connectionStatusBanner" class="bg-sky-50 border border-sky-200 text-sky-800 px-4 py-3 rounded-xl text-xs sm:text-sm flex items-center justify-between shadow-sm">
+            <div class="flex items-center gap-2.5">
+                <span class="relative flex h-2.5 w-2.5">
+                  <span id="pingDot" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                  <span id="statusDot" class="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
+                </span>
+                <span id="statusText" class="font-medium">កំពុងប្រើប្រាស់ទិន្នន័យគំរូ (Mock Data)។ អ្នកអាចភ្ជាប់ជាមួយ Google Sheet Link ដោយផ្ទាល់បាន។</span>
+            </div>
+            <button onclick="document.getElementById('btnSettings').click()" class="underline font-semibold hover:text-sky-900 text-xs shrink-0">ភ្ជាប់ Google Sheet</button>
+        </div>
+
+        <!-- Search Box Section -->
+        <div class="bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 p-6 sm:p-8 transition-all">
+            <div class="max-w-2xl mx-auto text-center mb-6">
+                <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">ស្វែងរកព័ត៌មានវត្តមាន</h2>
+                <p class="text-sm text-slate-500">បញ្ចូលឈ្មោះ ឬ លេខសម្គាល់ខ្លួន (ID) ដើម្បីពិនិត្យវត្តមាន</p>
+            </div>
+
+            <!-- Search Form -->
+            <form id="searchForm" onsubmit="event.preventDefault(); performSearch();" class="max-w-2xl mx-auto">
+                <div class="relative flex items-center">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                        <i class="fa-solid fa-magnifying-glass text-lg"></i>
+                    </div>
+                    <input 
+                        type="text" 
+                        id="searchInput" 
+                        placeholder="ឧទាហរណ៍៖ សុខ ជា ឬ STU-001..." 
+                        class="w-full pl-11 pr-28 py-3.5 sm:py-4 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 focus:bg-white transition-all shadow-inner"
+                        autocomplete="off"
+                    >
+                    <button 
+                        type="button" 
+                        id="btnClear" 
+                        onclick="clearSearch()" 
+                        class="hidden absolute right-24 text-slate-400 hover:text-slate-600 p-1 rounded-full"
+                    >
+                        <i class="fa-solid fa-circle-xmark"></i>
+                    </button>
+                    <button 
+                        type="submit" 
+                        class="absolute right-2 px-4 sm:px-6 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-medium text-sm sm:text-base rounded-lg transition-all shadow-md shadow-sky-600/30 active:scale-95 flex items-center gap-2"
+                    >
+                        <span>ស្វែងរក</span>
+                    </button>
+                </div>
+            </form>
+
+            <!-- Quick Filter Tags -->
+            <div class="max-w-2xl mx-auto mt-4 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                <span class="font-medium text-slate-400">ស្វែងរកលឿន៖</span>
+                <button onclick="quickSearch('STU-001')" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md transition-all">STU-001</button>
+                <button onclick="quickSearch('សុខ ជា')" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md transition-all">សុខ ជា</button>
+                <button onclick="quickSearch('ចាន់ ធារី')" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md transition-all">ចាន់ ធារី</button>
+                <button onclick="quickSearch('STU-004')" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md transition-all">STU-004</button>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultsContainer" class="space-y-4">
+            <!-- Initial State Info -->
+            <div id="initialState" class="text-center py-12 px-4">
+                <div class="w-16 h-16 bg-sky-50 text-sky-500 rounded-2xl flex items-center justify-center mx-auto mb-3 text-2xl">
+                    <i class="fa-solid fa-search"></i>
+                </div>
+                <h3 class="text-base font-semibold text-slate-700 mb-1">មិនទាន់មានការស្វែងរក</h3>
+                <p class="text-xs sm:text-sm text-slate-400 max-w-sm mx-auto">សូមបញ្ចូលឈ្មោះ ឬ លេខសម្គាល់ខ្លួន នៅក្នុងប្រអប់ខាងលើ ដើម្បីបង្ហាញលទ្ធផលវត្តមាន</p>
+            </div>
+
+            <!-- Loading Spinner State -->
+            <div id="loadingState" class="hidden text-center py-12 px-4">
+                <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-sky-500 border-t-transparent mb-3"></div>
+                <p class="text-sm text-slate-600 font-medium">កំពុងទាញយកទិន្នន័យពី Google Sheets...</p>
+            </div>
+
+            <!-- Empty Search Result -->
+            <div id="emptyState" class="hidden bg-white rounded-2xl p-8 text-center border border-slate-200 shadow-sm">
+                <div class="w-16 h-16 bg-amber-50 text-amber-500 rounded-2xl flex items-center justify-center mx-auto mb-3 text-2xl">
+                    <i class="fa-solid fa-face-frown"></i>
+                </div>
+                <h3 class="text-base font-semibold text-slate-800 mb-1">រកមិនឃើញទិន្នន័យឡើយ</h3>
+                <p class="text-xs sm:text-sm text-slate-500 max-w-md mx-auto">ពុំមានទិន្នន័យដែលត្រូវគ្នានឹងការស្វែងរក "<span id="missingKeyword" class="font-semibold text-slate-700"></span>" ឡើយ។ សូមត្រួតពិនិត្យឈ្មោះ ឬ អត្តលេខឡើងវិញ។</p>
+            </div>
+
+            <!-- Error Banner Display -->
+            <div id="errorState" class="hidden bg-rose-50 rounded-2xl p-6 text-center border border-rose-200 shadow-sm text-rose-800 space-y-3">
+                <div class="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto text-xl">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <h3 class="text-base font-bold text-rose-900" id="errorTitle">ទាញយកទិន្នន័យពី Google Sheet មិនបានជោគជ័យ</h3>
+                <p class="text-xs sm:text-sm max-w-lg mx-auto text-rose-700 leading-relaxed" id="errorMessage"></p>
+                <div class="pt-2">
+                    <button onclick="document.getElementById('btnHelp').click()" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-semibold shadow-md transition-all">
+                        <i class="fa-solid fa-circle-info mr-1"></i> មើលរបៀបកំណត់ Google Sheet ឱ្យមើលបាន
+                    </button>
+                </div>
+            </div>
+
+            <!-- Results Card Header -->
+            <div id="resultHeader" class="hidden flex items-center justify-between px-2">
+                <p class="text-sm font-semibold text-slate-700">
+                    លទ្ធផលស្វែងរក (<span id="resultCount" class="text-sky-600">0</span>)
+                </p>
+                <span id="activeQueryDisplay" class="text-xs text-slate-500 bg-white px-3 py-1 rounded-full border border-slate-200"></span>
+            </div>
+
+            <!-- Results Desktop Table / Mobile Cards -->
+            <div id="resultsContent" class="hidden space-y-4">
+                <!-- Mobile View Cards Container -->
+                <div id="cardsView" class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:hidden"></div>
+
+                <!-- Desktop View Table Container -->
+                <div class="hidden sm:block bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50/80 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                                    <th class="py-3.5 px-4">អត្តលេខ (ID)</th>
+                                    <th class="py-3.5 px-4">ឈ្មោះ</th>
+                                    <th class="py-3.5 px-4">កាលបរិច្ឆេទ</th>
+                                    <th class="py-3.5 px-4">ម៉ោង</th>
+                                    <th class="py-3.5 px-4">ស្ថានភាព</th>
+                                    <th class="py-3.5 px-4">កំណត់សម្គាល់</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody" class="divide-y divide-slate-100 text-sm">
+                                <!-- Table rows populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Config Settings Modal -->
+    <div id="settingsModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 transform transition-all">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-file-excel text-emerald-600"></i>
+                    ភ្ជាប់ Google Sheet ដោយផ្ទាល់ (គ្មាន Apps Script)
+                </h3>
+                <button onclick="closeModal('settingsModal')" class="text-slate-400 hover:text-slate-600 p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4 text-xs sm:text-sm">
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Google Sheet Link ឬ Sheet ID</label>
+                    <input 
+                        type="text" 
+                        id="sheetUrlInput" 
+                        placeholder="https://docs.google.com/spreadsheets/d/1BxiMVs0.../edit" 
+                        class="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 text-xs"
+                    >
+                    <p class="text-[11px] text-slate-400 mt-1">ទម្លាក់ Link នៃ Google Sheet របស់អ្នកត្រង់នេះ។</p>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-700 mb-1">ឈ្មោះ Tab ឬ Sheet (ជម្រើស)</label>
+                    <input 
+                        type="text" 
+                        id="sheetNameInput" 
+                        placeholder="ឧទាហរណ៍៖ Sheet1 ឬ Attendance (ទុកទទេបើប្រើ Tab ដំបូង)" 
+                        class="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 text-xs"
+                    >
+                </div>
+
+                <div class="p-3 bg-emerald-50 rounded-lg border border-emerald-200 text-emerald-900 text-xs space-y-1.5">
+                    <p class="font-bold flex items-center gap-1.5">
+                        <i class="fa-solid fa-check-circle text-emerald-600"></i>
+                        តម្រូវការ៖ កំណត់សិទ្ធិ Google Sheet ឱ្យមើលបាន
+                    </p>
+                    <p class="text-[11px] leading-relaxed text-emerald-800">
+                        ចុចប៊ូតុង <b>Share (ចែករំលែក)</b> ក្នុង Google Sheet ➔ ត្រង់ <i>General Access</i> ដូរទៅជា <b>Anyone with the link (អ្នកណាមានតំណភ្ជាប់ក៏អាចមើលបាន)</b>។
+                    </p>
+                </div>
+
+                <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 text-slate-600 text-[11px] space-y-1">
+                    <p class="font-semibold text-slate-700">តារាង Column ក្នុង Google Sheet គួរសរសេរ៖</p>
+                    <p><code class="bg-slate-200 px-1 py-0.5 rounded text-slate-800">ID</code> | <code class="bg-slate-200 px-1 py-0.5 rounded text-slate-800">Name</code> | <code class="bg-slate-200 px-1 py-0.5 rounded text-slate-800">Date</code> | <code class="bg-slate-200 px-1 py-0.5 rounded text-slate-800">Time</code> | <code class="bg-slate-200 px-1 py-0.5 rounded text-slate-800">Status</code> | <code class="bg-slate-200 px-1 py-0.5 rounded text-slate-800">Note</code></p>
+                </div>
+            </div>
+
+            <div class="mt-6 flex items-center justify-end gap-2 pt-4 border-t border-slate-100">
+                <button onclick="resetToMockData()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg text-xs transition-all">
+                    ប្រើទិន្នន័យគំរូ
+                </button>
+                <button onclick="saveSheetUrl()" class="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white font-medium rounded-lg text-xs transition-all shadow-md shadow-sky-600/30">
+                    រក្សាទុកការកំណត់
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help & Instructions Modal -->
+    <div id="helpModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-100 max-h-[90vh] flex flex-col">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-book-open text-sky-600"></i>
+                    របៀបភ្ជាប់ Google Sheet ដោយមិនបាច់ប្រើ Apps Script
+                </h3>
+                <button onclick="closeModal('helpModal')" class="text-slate-400 hover:text-slate-600 p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="overflow-y-auto space-y-4 text-xs sm:text-sm text-slate-600 pr-1">
+                <div class="space-y-2">
+                <h4 class="font-bold text-slate-800 flex items-center gap-2 text-sm">
+                    <span class="w-5 h-5 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center text-xs">២</span>
+                    បើកសិទ្ធិមើលជាសាធារណៈ (Public Access)
+                </h4>
+                <p class="pl-7">នៅជ្រុងខាងស្តាំលើនៃ Google Sheet របស់អ្នក៖</p>
+                <ul class="pl-12 list-disc space-y-1 text-slate-700">
+                    <li>ចុចប៊ូតុង <strong>Share (ចែករំលែក)</strong></li>
+                    <li>ត្រង់ផ្នែក <em>General access (ការចូលប្រើប្រាស់ទូទៅ)</em> ប្តូរពី Restricted ទៅជា <strong>Anyone with the link (អ្នកណាដែលមានតំណភ្ជាប់)</strong></li>
+                    <li>កំណត់សិទ្ធិជា <strong>Viewer (អ្នកមើល)</strong></li>
+                    <li>ចុច <strong>Copy link</strong></li>
+                </ul>
+            </div>
+
+            <div class="space-y-2">
+                <h4 class="font-bold text-slate-800 flex items-center gap-2 text-sm">
+                    <span class="w-5 h-5 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center text-xs">៣</span>
+                    ប្រសិនបើនៅតែមិនដើរ (Publish to Web)
+                </h4>
+                <p class="pl-7">ចូលទៅកាន់ Google Sheet របស់អ្នក ➔ <strong>File</strong> ➔ <strong>Share</strong> ➔ <strong>Publish to web</strong> ➔ ចុច <strong>Publish</strong> ជាការស្រេច។</p>
+            </div>
+        </div>
+
+        <div class="mt-4 pt-4 border-t border-slate-100 flex justify-end">
+                <button onclick="closeModal('helpModal')" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-semibold">
+                    យល់ព្រម
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="mt-auto border-t border-slate-200 bg-white/60 py-4 text-center text-xs text-slate-500">
+        <p>© 2026 ប្រព័ន្ធត្រួតពិនិត្យ និងស្វែងរកវត្តមាន | Attendance Search System (Direct Sheet Access)</p>
+    </footer>
+
+    <script>
+        // Mock Sample Data
+        const MOCK_DATA = [
+            { id: "STU-001", name: "សុខ ជា", date: "2026-03-01", time: "07:55 AM", status: "Present", note: "មកទាន់ពេល" },
+            { id: "STU-001", name: "សុខ ជា", date: "2026-03-02", time: "08:15 AM", status: "Late", note: "ស្ទះចរាចរណ៍" },
+            { id: "STU-002", name: "ចាន់ ធារី", date: "2026-03-01", time: "07:50 AM", status: "Present", note: "ល្អណាស់" },
+            { id: "STU-002", name: "ចាន់ ធារី", date: "2026-03-02", time: "07:58 AM", status: "Present", note: "-" },
+            { id: "STU-003", name: "កែវ មករា", date: "2026-03-01", time: "-", status: "Absent", note: "សុំច្បាប់ឈឺ" },
+            { id: "STU-004", name: "ឡុង ពិសិដ្ឋ", date: "2026-03-01", time: "08:05 AM", status: "Late", note: "យឺត ៥ នាទី" },
+            { id: "STU-004", name: "ឡុង ពិសិដ្ឋ", date: "2026-03-02", time: "07:45 AM", status: "Present", note: "-" },
+            { id: "STU-005", name: "អ៊ឹម សុភា", date: "2026-03-01", time: "07:52 AM", status: "Present", note: "មកទាន់ពេល" }
+        ];
+
+        let currentSheetUrl = localStorage.getItem('direct_gsheet_url') || '';
+        let currentSheetName = localStorage.getItem('direct_gsheet_name') || '';
+
+        // DOM Element references
+        const searchInput = document.getElementById('searchInput');
+        const btnClear = document.getElementById('btnClear');
+        const initialState = document.getElementById('initialState');
+        const loadingState = document.getElementById('loadingState');
+        const emptyState = document.getElementById('emptyState');
+        const resultHeader = document.getElementById('resultHeader');
+        const resultsContent = document.getElementById('resultsContent');
+        const cardsView = document.getElementById('cardsView');
+        const tableBody = document.getElementById('tableBody');
+        const resultCount = document.getElementById('resultCount');
+        const missingKeyword = document.getElementById('missingKeyword');
+        const activeQueryDisplay = document.getElementById('activeQueryDisplay');
+
+        // Initial Page setup
+        window.addEventListener('DOMContentLoaded', () => {
+            // Check if opened via local file:// protocol
+            if (window.location.protocol === 'file:') {
+                const localWarning = document.getElementById('localFileWarning');
+                if (localWarning) localWarning.classList.remove('hidden');
+            }
+
+            updateConnectionUI();
+
+            // Toggle clear button visibility on input change
+            searchInput.addEventListener('input', () => {
+                if (searchInput.value.trim().length > 0) {
+                    btnClear.classList.remove('hidden');
+                } else {
+                    btnClear.classList.add('hidden');
+                }
+            });
+
+            // Modal Trigger events
+            document.getElementById('btnSettings').addEventListener('click', () => {
+                document.getElementById('sheetUrlInput').value = currentSheetUrl;
+                document.getElementById('sheetNameInput').value = currentSheetName;
+                openModal('settingsModal');
+            });
+
+            document.getElementById('btnHelp').addEventListener('click', () => {
+                openModal('helpModal');
+            });
+        });
+
+        // Extract Google Sheet ID from full URL or return ID string
+        function extractSheetId(urlOrId) {
+            if (!urlOrId) return '';
+            const trimmed = urlOrId.trim();
+            const match = trimmed.match(/\/d\/([a-zA-Z0-9-_]+)/);
+            if (match && match[1]) {
+                return match[1];
+            }
+            if (/^[a-zA-Z0-9-_]{20,}$/.test(trimmed)) {
+                return trimmed;
+            }
+            return trimmed;
+        }
+
+        // Quick search trigger
+        function quickSearch(query) {
+            searchInput.value = query;
+            btnClear.classList.remove('hidden');
+            performSearch();
+        }
+
+        // Clear input box
+        function clearSearch() {
+            searchInput.value = '';
+            btnClear.classList.add('hidden');
+            searchInput.focus();
+            showState('initial');
+        }
+
+        // Modal Helpers
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        // Update API Connection Banner Status UI
+        function updateConnectionUI() {
+            const statusDot = document.getElementById('statusDot');
+            const pingDot = document.getElementById('pingDot');
+            const statusText = document.getElementById('statusText');
+
+            if (currentSheetUrl) {
+                statusDot.className = "relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500";
+                pingDot.className = "animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75";
+                statusText.innerText = "បានភ្ជាប់ជាមួយ Google Sheet ដោយផ្ទាល់ (Direct Link)។";
+            } else {
+                statusDot.className = "relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500";
+                pingDot.className = "animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75";
+                statusText.innerText = "កំពុងប្រើប្រាស់ទិន្នន័យគំរូ (Mock Data)។ អ្នកអាចភ្ជាប់ជាមួយ Google Sheet Link ដោយផ្ទាល់បាន។";
+            }
+        }
+
+        // Save Custom Sheet URL
+        function saveSheetUrl() {
+            const url = document.getElementById('sheetUrlInput').value.trim();
+            const sheetName = document.getElementById('sheetNameInput').value.trim();
+
+            if (url) {
+                localStorage.setItem('direct_gsheet_url', url);
+                localStorage.setItem('direct_gsheet_name', sheetName);
+                currentSheetUrl = url;
+                currentSheetName = sheetName;
+            } else {
+                localStorage.removeItem('direct_gsheet_url');
+                localStorage.removeItem('direct_gsheet_name');
+                currentSheetUrl = '';
+                currentSheetName = '';
+            }
+            updateConnectionUI();
+            closeModal('settingsModal');
+            if (searchInput.value.trim()) {
+                performSearch();
+            }
+        }
+
+        // Reset API Settings back to Mock Data
+        function resetToMockData() {
+            localStorage.removeItem('direct_gsheet_url');
+            localStorage.removeItem('direct_gsheet_name');
+            currentSheetUrl = '';
+            currentSheetName = '';
+            document.getElementById('sheetUrlInput').value = '';
+            document.getElementById('sheetNameInput').value = '';
+            updateConnectionUI();
+            closeModal('settingsModal');
+            if (searchInput.value.trim()) {
+                performSearch();
+            }
+        }
+
+        // Streamlined State View Switcher
+        function showState(stateName) {
+            initialState.classList.add('hidden');
+            loadingState.classList.add('hidden');
+            emptyState.classList.add('hidden');
+            const errorState = document.getElementById('errorState');
+            if (errorState) errorState.classList.add('hidden');
+            resultHeader.classList.add('hidden');
+            resultsContent.classList.add('hidden');
+
+            if (stateName === 'initial') initialState.classList.remove('hidden');
+            if (stateName === 'loading') loadingState.classList.remove('hidden');
+            if (stateName === 'empty') emptyState.classList.remove('hidden');
+            if (stateName === 'error' && errorState) errorState.classList.remove('hidden');
+            if (stateName === 'results') {
+                resultHeader.classList.remove('hidden');
+                resultsContent.classList.remove('hidden');
+            }
+        }
+
+        // Robust CSV Parser in pure JS
+        function parseCSV(text) {
+            const lines = [];
+            let row = [];
+            let cell = '';
+            let inQuotes = false;
+
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                const nextChar = text[i + 1];
+
+                if (char === '"') {
+                    if (inQuotes && nextChar === '"') {
+                        cell += '"';
+                        i++;
+                    } else {
+                        inQuotes = !inQuotes;
+                    }
+                } else if (char === ',' && !inQuotes) {
+                    row.push(cell.trim());
+                    cell = '';
+                } else if ((char === '\r' || char === '\n') && !inQuotes) {
+                    if (char === '\r' && nextChar === '\n') {
+                        i++;
+                    }
+                    row.push(cell.trim());
+                    if (row.length > 0 && row.some(c => c !== '')) {
+                        lines.push(row);
+                    }
+                    row = [];
+                    cell = '';
+                } else {
+                    cell += char;
+                }
+            }
+            if (cell || row.length > 0) {
+                row.push(cell.trim());
+                if (row.some(c => c !== '')) lines.push(row);
+            }
+            return lines;
+        }
+
+        // Convert CSV array to Structured JSON Objects
+        function convertCsvToObjects(csvRows) {
+            if (!csvRows || csvRows.length < 2) return [];
+
+            const headers = csvRows[0].map(h => h.toLowerCase().trim());
+            
+            // Find Column Indexes flexibly
+            let idIdx = headers.findIndex(h => h.includes('id') || h.includes('អត្តលេខ'));
+            let nameIdx = headers.findIndex(h => h.includes('name') || h.includes('ឈ្មោះ'));
+            let dateIdx = headers.findIndex(h => h.includes('date') || h.includes('កាលបរិច្ឆេទ'));
+            let timeIdx = headers.findIndex(h => h.includes('time') || h.includes('ម៉ោង'));
+
+            let statusIdx = headers.findIndex(h => h.includes('status') || h.includes('ស្ថានភាព'));
+            let noteIdx = headers.findIndex(h => h.includes('note') || h.includes('កំណត់សម្គាល់'));
+
+            return csvRows.slice(1).map(row => ({
+                id: idIdx >= 0 ? row[idIdx] || '' : '',
+                name: nameIdx >= 0 ? row[nameIdx] || '' : '',
+                date: dateIdx >= 0 ? row[dateIdx] || '' : '',
+                time: timeIdx >= 0 ? row[timeIdx] || '' : '',
+                status: statusIdx >= 0 ? row[statusIdx] || '' : '',
+                note: noteIdx >= 0 ? row[noteIdx] || '' : ''
+            })).filter(record => Object.values(record).some(value => value !== ''));
+        }
+
+        // Fetch records directly from Google Sheet CSV endpoint with Fallback
+        async function fetchDirectFromGoogleSheet(sheetId, sheetName) {
+            // Method 1: standard gviz CSV endpoint
+            let primaryUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv`;
+            if (sheetName) {
+                primaryUrl += `&sheet=${encodeURIComponent(sheetName)}`;
+            }
+
+            // Method 2: publish to web CSV endpoint (fallback)
+            let fallbackUrl = `https://docs.google.com/spreadsheets/d/${sheetName}/pub?output=csv`;
+            if (sheetName) {
+                fallbackUrl += `&sheet=${encodeURIComponent(sheetName)}`;
+            }
+
+            let response;
+            let csvText = '';
+
+            try {
+                response = await fetch(primaryUrl);
+                if (response.ok) {
+                    csvText = await response.text();
+                }
+            } catch (e) {
+                console.warn('Primary gviz endpoint fetch failed, trying publish fallback...', e);
+            }
+
+            // Fallback attempt if primary failed or returned html
+            if (!csvText || csvText.trim().startsWith('<!DOCTYPE') || csvText.trim().startsWith('<html')) {
+                try {
+                    response = await fetch(fallbackUrl);
+                    if (response.ok) {
+                        csvText = await response.text();
+                    }
+                } catch (e) {
+                    console.error('Fallback pub endpoint also failed', e);
+                }
+            }
+
+            if (!csvText) {
+                throw new Error('HTTP_FETCH_FAILED');
+            }
+
+            // Check if response is HTML login page (Sheet is private or restricted)
+            if (csvText.trim().startsWith('<!DOCTYPE') || csvText.trim().startsWith('<html') || csvText.includes('google-site-verification')) {
+                throw new Error('SHEET_NOT_PUBLIC');
+            }
+
+            const parsedRows = parseCSV(csvText);
+            return convertCsvToObjects(parsedRows);
+        }
+
+        // Main Search Logic
+        async function performSearch() {
+            const query = searchInput.value.trim().toLowerCase();
+            if (!query) {
+                showState('initial');
+                return;
+            }
+
+            showState('loading');
+
+            try {
+                let records = [];
+
+                if (currentSheetUrl) {
+                    const sheetId = extractSheetId(currentSheetUrl);
+                    if (!sheetId) {
+                        throw new Error('INVALID_SHEET_URL');
+                    }
+                    records = await fetchDirectFromGoogleSheet(sheetId, currentSheetName);
+                } else {
+                    // Simulate brief network delay for mock data
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                    records = MOCK_DATA;
+                }
+
+                // Filter records by Name or ID matching search term
+                const filtered = records.filter(item => {
+                    const idMatch = item.id && item.id.toString().toLowerCase().includes(query);
+                    const nameMatch = item.name && item.name.toString().toLowerCase().includes(query);
+                    return idMatch || nameMatch;
+                });
+
+                if (filtered.length === 0) {
+                    missingKeyword.innerText = searchInput.value.trim();
+                    showState('empty');
+                } else {
+                    renderResults(filtered, searchInput.value.trim());
+                    showState('results');
+                }
+
+            } catch (err) {
+                console.error("Search fetch error:", err);
+                
+                const errorMessageEl = document.getElementById('errorMessage');
+                if (err.message === 'SHEET_NOT_PUBLIC') {
+                    errorMessageEl.innerHTML = `
+                        <b>Google Sheet របស់អ្នកមិនទាន់បានបើកជាសាធារណៈឡើយ (Private)!</b><br>
+                        ១. សូមចូលទៅកាន់ Google Sheet របស់អ្នក ➔ ចុចប៊ូតុង <b>Share (ចែករំលែក)</b> ➔ ត្រង់ <i>General access</i> ដូរទៅជា <b>Anyone with the link (អ្នកណាមានតំណភ្ជាប់ក៏អាចមើលបាន)</b>។<br>
+                        ២. ប្រសិនបើនៅតែមិនដើរ សូមចូលទៅកាន់ <b>File</b> ➔ <b>Share</b> ➔ <b>Publish to web</b> រួចចុច Publish។
+                    `;
+                } else if (err.message === 'INVALID_SHEET_URL') {
+                    errorMessageEl.innerHTML = `
+                        <b>Link Google Sheet មិនត្រឹមត្រូវ!</b><br>
+                        សូមពិនិត្យមើល Google Sheet Link ឬ ID ដែលអ្នកបានបញ្ចូលក្នុងទំព័រកំណត់ឡើងវិញ។
+                    `;
+                } else {
+                    errorMessageEl.innerHTML = `
+                        <b>មិនអាចទាញយកទិន្នន័យពី Google Sheet បានឡើយ (អាចមកពី CORS Restriction)!</b><br>
+                        ប្រសិនបើអ្នកកំពុងបើក File HTML នេះផ្ទាល់ពី Computer (` + window.location.protocol + `) សូមសាកល្បងឡើងទិន្នន័យលើ Web Hosting (GitHub Pages/Netlify) ឬបើកតាមរយៈ Live Server។
+                    `;
+                }
+                showState('error');
+            }
+        }
+
+        // Status Badge Styling Helper
+        function getStatusBadge(status) {
+            const s = (status || '').toString().trim().toLowerCase();
+            if (s === 'present' || s === 'វត្តមាន' || s === 'មក') {
+                return `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> វត្តមាន (Present)
+                </span>`;
+            } else if (s === 'late' || s === 'យឺត') {
+                return `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> យឺត (Late)
+                </span>`;
+            } else if (s === 'absent' || s === 'អវត្តមាន' || s === 'ឈប់') {
+                return `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> អវត្តមាន (Absent)
+                </span>`;
+            } else if (s === 'permission' || s === 'ច្បាប់') {
+                return `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-sky-50 text-sky-700 border border-sky-200">
+                    <span class="w-1.5 h-1.5 rounded-full bg-sky-500"></span> សុំច្បាប់ (Permission)
+                </span>`;
+            }
+            return `<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">${status || '-'}</span>`;
+        }
+
+        // Render Search Result Items
+        function renderResults(records, query) {
+            resultCount.innerText = records.length;
+            activeQueryDisplay.innerText = `ពាក្យស្វែងរក៖ "${query}"`;
+
+            // Reset Containers
+            cardsView.innerHTML = '';
+            tableBody.innerHTML = '';
+
+            records.forEach((item, index) => {
+                const statusBadgeHtml = getStatusBadge(item.status);
+
+                // Mobile Card Template
+                const card = document.createElement('div');
+                card.className = "bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3";
+                card.innerHTML = `
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-bold text-sky-600 bg-sky-50 px-2 py-0.5 rounded border border-sky-100">${item.id || 'N/A'}</span>
+                            <h4 class="font-bold text-slate-800 text-base">${item.name || '-'}</h4>
+                        </div>
+                        <div>${statusBadgeHtml}</div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-xs text-slate-600">
+                        <div>
+                            <span class="text-slate-400 block text-[11px]">កាលបរិច្ឆេទ</span>
+                            <span class="font-medium text-slate-700"><i class="fa-regular fa-calendar text-slate-400 mr-1"></i>${item.date || '-'}</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block text-[11px]">ម៉ោង</span>
+                            <span class="font-medium text-slate-700"><i class="fa-regular fa-clock text-slate-400 mr-1"></i>${item.time || '-'}</span>
+                        </div>
+                    </div>
+                    ${item.note && item.note !== '-' ? `
+                    <div class="text-xs bg-slate-50 p-2 rounded-lg text-slate-600 border border-slate-100">
+                        <span class="text-slate-400 font-semibold">កំណត់សម្គាល់៖</span> ${item.note}
+                    </div>` : ''}
+                `;
+                cardsView.appendChild(card);
+
+                // Desktop Table Row Template
+                const tr = document.createElement('tr');
+                tr.className = index % 2 === 0 ? "bg-white hover:bg-slate-50/80 transition-colors" : "bg-slate-50/40 hover:bg-slate-50 transition-colors";
+                tr.innerHTML = `
+                    <td class="py-3.5 px-4 font-semibold text-sky-600">${item.id || 'N/A'}</td>
+                    <td class="py-3.5 px-4 font-bold text-slate-800">${item.name || '-'}</td>
+                    <td class="py-3.5 px-4 text-slate-600 text-xs">${item.date || '-'}</td>
+                    <td class="py-3.5 px-4 text-slate-600 text-xs">${item.time || '-'}</td>
+                    <td class="py-3.5 px-4">${statusBadgeHtml}</td>
+                    <td class="py-3.5 px-4 text-slate-500 text-xs">${item.note || '-'}</td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+    </script>
+</body>
+</html>
