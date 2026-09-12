@@ -406,7 +406,7 @@
                         <span class="font-medium text-slate-700"><i class="fa-regular fa-calendar text-slate-400 mr-1"></i>${item.date || '-'}</span>
                         </div>
                         <div>
-                        <span class="text-slate-400 block text-[11px]">ម៉ោង</span>
+                        <span class="text-slate-400 block text-[11px]">ចំនួនម៉ោង</span>
                         <span class="font-medium text-slate-700"><i class="fa-regular fa-clock text-slate-400 mr-1"></i>${item.time || '-'}</span>
                         </div>
 
